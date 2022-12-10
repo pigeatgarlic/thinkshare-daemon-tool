@@ -10,7 +10,7 @@ import (
 
 type Signaling struct {
 	Wsurl    string `json:"wsurl"`
-	Grpcport string `json:"grpcport"`
+	Grpcport int `json:"grpcport"`
 	Grpcip   string `json:"grpcip"`
 }
 
