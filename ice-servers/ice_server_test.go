@@ -18,7 +18,7 @@ func TestFilter(t *testing.T) {
 				Credential:     "oneplay",
 				CredentialType: webrtc.ICECredentialTypePassword,
 			}, {
-				URLs:           []string{"turn:stun.l.google.com:19302"},
+				URLs:           []string{"turn:52.66.204.210:3478"},
 				Username:       "oneplay",
 				Credential:     "oneplay",
 				CredentialType: webrtc.ICECredentialTypePassword,

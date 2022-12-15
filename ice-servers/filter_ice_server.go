@@ -20,7 +20,8 @@ func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
 		splits := strings.Split(ice.URLs[0],":");
 		if splits[0] == "turn" {
 			total_turn++;
-			go func ()  {
+
+			go func (ice_ webrtc.ICEServer)  {
 				defer func ()  {
 					count++;
 				}()
@@ -31,17 +32,20 @@ func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
 				if err != nil {
 					return
 				}
-				pinger.Count = 5
+				pinger.Count = 3
+				pinger.Timeout = time.Second
 				err = pinger.Run() // Blocks until finished.
 				if err != nil {
 					return 
 				}
 
 				stats := pinger.Statistics() // get send/receive/duplicate/rtt stats
-				fmt.Printf("stats %s %d\n",ice.URLs[0],stats.AvgRtt.Milliseconds());
+				fmt.Printf("stats %s %d\n",ice_.URLs[0],stats.AvgRtt.Milliseconds());
 
-				pingResults[ice.URLs[0]] = stats.AvgRtt
-			}()
+				if stats.AvgRtt != 0 {
+					pingResults[ice_.URLs[0]] = stats.AvgRtt
+				}
+			}(ice)
 		} else if splits[0] == "stun" {
 			result.ICEServers = append(result.ICEServers, ice)
 			continue
