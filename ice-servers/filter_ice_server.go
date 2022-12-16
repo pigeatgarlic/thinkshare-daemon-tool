@@ -46,10 +46,7 @@ func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
 					pingResults[ice_.URLs[0]] = stats.AvgRtt
 				}
 			}(ice)
-		} else if splits[0] == "stun" {
-			result.ICEServers = append(result.ICEServers, ice)
-			continue
-		}
+		} 
 	}
 
 	for {
@@ -70,6 +67,10 @@ func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
 	for _,ice := range config.ICEServers {
 		if ice.URLs[0] == minUrl {
 			result.ICEServers = append(result.ICEServers, ice)
+
+			result.ICEServers = append(result.ICEServers, webrtc.ICEServer{
+				URLs: []string{ fmt.Sprintf("stun:%s:3478",strings.Split(ice.URLs[0],":")[1]) },
+			})
 		}
 	}
 
