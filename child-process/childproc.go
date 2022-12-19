@@ -51,16 +51,12 @@ type ChildProcesses struct {
 	mutex sync.Mutex
 	procs map[ProcessID]*ChildProcess
 
-	out chan string
-
 	ExitEvent chan ProcessID
 }
 
 func NewChildProcessSystem() *ChildProcesses {
 	ret := ChildProcesses{
 		ExitEvent: make(chan ProcessID),
-
-		out: make(chan string, 1000),
 
 		procs: make(map[ProcessID]*ChildProcess),
 		mutex: sync.Mutex{},
@@ -79,12 +75,6 @@ func NewChildProcessSystem() *ChildProcesses {
 		}
 	}()
 
-	go func() {
-		for {
-			str := <-ret.out
-			go log.PushLog("%s", str)
-		}
-	}()
 	return &ret
 }
 
@@ -238,7 +228,7 @@ func (procs *ChildProcesses) copyAndCapture(process string, r io.Reader) {
 				out := append(prefix, line...)
 				out = append(out, after...)
 
-				procs.out <- string(out)
+				log.PushLog(string(out))
 			}
 		}
 	}
