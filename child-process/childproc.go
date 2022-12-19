@@ -208,7 +208,7 @@ func findLineEnd(dat []byte) (out [][]byte) {
 
 func (procs *ChildProcesses) copyAndCapture(process string, r io.Reader) {
 	prefix := []byte(fmt.Sprintf("Child process (%s): ", process))
-	after := []byte("\n")
+	after := []byte("")
 
 	buf := make([]byte, 1024)
 	for {
