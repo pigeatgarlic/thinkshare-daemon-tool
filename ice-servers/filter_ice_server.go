@@ -7,26 +7,27 @@ import (
 	"strings"
 	"time"
 
+	"github.com/OnePlay-Internet/daemon-tool/log"
 	"github.com/go-ping/ping"
 	"github.com/pion/webrtc/v3"
 )
 
-func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
+func FilterWebRTCConfig(config webrtc.Configuration) webrtc.Configuration {
 	result := webrtc.Configuration{}
 
-	total_turn,count := 0,0
+	total_turn, count := 0, 0
 	pingResults := map[string]time.Duration{}
-	for _,ice := range config.ICEServers {
-		splits := strings.Split(ice.URLs[0],":");
+	for _, ice := range config.ICEServers {
+		splits := strings.Split(ice.URLs[0], ":")
 		if splits[0] == "turn" {
-			total_turn++;
+			total_turn++
 
-			go func (ice_ webrtc.ICEServer)  {
-				defer func ()  {
-					count++;
+			go func(ice_ webrtc.ICEServer) {
+				defer func() {
+					count++
 				}()
 
-				domain := splits[1];
+				domain := splits[1]
 				pinger, err := ping.NewPinger(domain)
 				pinger.SetPrivileged(true)
 				if err != nil {
@@ -36,17 +37,17 @@ func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
 				pinger.Timeout = time.Second
 				err = pinger.Run() // Blocks until finished.
 				if err != nil {
-					return 
+					return
 				}
 
 				stats := pinger.Statistics() // get send/receive/duplicate/rtt stats
-				fmt.Printf("stats %s %d\n",ice_.URLs[0],stats.AvgRtt.Milliseconds());
+				log.PushLog("stats %s %d\n", ice_.URLs[0], stats.AvgRtt.Milliseconds())
 
 				if stats.AvgRtt != 0 {
 					pingResults[ice_.URLs[0]] = stats.AvgRtt
 				}
 			}(ice)
-		} 
+		}
 	}
 
 	for {
@@ -56,40 +57,37 @@ func FilterWebRTCConfig(config webrtc.Configuration) (webrtc.Configuration){
 		}
 	}
 
-	minUrl,minDuration := "", 100 *time.Second
-	for url,result := range pingResults {
+	minUrl, minDuration := "", 100*time.Second
+	for url, result := range pingResults {
 		if result < minDuration {
 			minDuration = result
 			minUrl = url
 		}
 	}
 
-	for _,ice := range config.ICEServers {
+	for _, ice := range config.ICEServers {
 		if ice.URLs[0] == minUrl {
 			result.ICEServers = append(result.ICEServers, ice)
 
 			result.ICEServers = append(result.ICEServers, webrtc.ICEServer{
-				URLs: []string{ fmt.Sprintf("stun:%s:3478",strings.Split(ice.URLs[0],":")[1]) },
+				URLs: []string{fmt.Sprintf("stun:%s:3478", strings.Split(ice.URLs[0], ":")[1])},
 			})
 		}
 	}
 
-
 	return result
 }
 
-
-
 func FilterAndEncodeWebRTCConfig(config webrtc.Configuration) string {
-	filtered := FilterWebRTCConfig(config);
-	bytes,_ := json.Marshal(filtered);
+	filtered := FilterWebRTCConfig(config)
+	bytes, _ := json.Marshal(filtered)
 	return base64.RawURLEncoding.EncodeToString(bytes)
 }
 
-func DecodeWebRTCConfig(data string) webrtc.Configuration{
-	bytes,_ := base64.RawURLEncoding.DecodeString(data)
+func DecodeWebRTCConfig(data string) webrtc.Configuration {
+	bytes, _ := base64.RawURLEncoding.DecodeString(data)
 
 	result := webrtc.Configuration{}
-	json.Unmarshal(bytes,&result);
+	json.Unmarshal(bytes, &result)
 	return result
 }
