@@ -41,8 +41,6 @@ func FilterWebRTCConfig(config webrtc.Configuration) webrtc.Configuration {
 				}
 
 				stats := pinger.Statistics() // get send/receive/duplicate/rtt stats
-				log.PushLog("stats %s %d\n", ice_.URLs[0], stats.AvgRtt.Milliseconds())
-
 				if stats.AvgRtt != 0 {
 					pingResults[ice_.URLs[0]] = stats.AvgRtt
 				}
@@ -79,7 +77,15 @@ func FilterWebRTCConfig(config webrtc.Configuration) webrtc.Configuration {
 }
 
 func FilterAndEncodeWebRTCConfig(config webrtc.Configuration) string {
-	filtered := FilterWebRTCConfig(config)
+	filtered := webrtc.Configuration{}
+	for {
+		filtered = FilterWebRTCConfig(config)
+		if len(filtered.ICEServers) == 2 {
+			log.PushLog("found ice server")
+			break
+		} 
+		log.PushLog("unable to find ice server, retrying")
+	}
 	bytes, _ := json.Marshal(filtered)
 	return base64.RawURLEncoding.EncodeToString(bytes)
 }
